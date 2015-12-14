@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <math.h>
 
+#include <clapack.h>
+#include <cblas.h>
 float *random_matrix(int rows, int cols)
 {
     int i;
@@ -122,13 +124,29 @@ void gemm_cpu(int TA, int TB, int M, int N, int K, float ALPHA,
         float BETA,
         float *C, int ldc)
 {
-    //printf("cpu: %d %d %d %d %d %f %d %d %f %d\n",TA, TB, M, N, K, ALPHA, lda, ldb, BETA, ldc);
+
+    // matrix multi by cblas_sgemm()
+    if(!TA && !TB)
+        cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 
+                M, N, K, ALPHA, A, lda, B, ldb, BETA, C, ldc);
+    else if(TA && !TB)
+        cblas_sgemm(CblasRowMajor, CblasTrans, CblasNoTrans,
+                M, N, K, ALPHA, A, lda, B, ldb, BETA, C, ldc);
+    else if(!TA && TB)
+        cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
+                M, N, K, ALPHA, A, lda, B, ldb, BETA, C, ldc);
+    else
+        cblas_sgemm(CblasRowMajor, CblasTrans, CblasTrans,
+                M, N, K, ALPHA, A, lda, B, ldb, BETA, C, ldc);
+    /*
+    // matrix multi by multi-looping
     int i, j;
     for(i = 0; i < M; ++i){
         for(j = 0; j < N; ++j){
             C[i*ldc + j] *= BETA;
         }
     }
+    
     if(!TA && !TB)
         gemm_nn(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
     else if(TA && !TB)
@@ -137,6 +155,7 @@ void gemm_cpu(int TA, int TB, int M, int N, int K, float ALPHA,
         gemm_nt(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
     else
         gemm_tt(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
+    */
 }
 
 #ifdef GPU
